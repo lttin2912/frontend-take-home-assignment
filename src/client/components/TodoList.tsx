@@ -4,6 +4,9 @@ import * as Checkbox from '@radix-ui/react-checkbox'
 
 import { api } from '@/utils/client/api'
 
+import { useAutoAnimate } from '@formkit/auto-animate/react'
+
+
 /**
  * QUESTION 3:
  * -----------
@@ -63,31 +66,69 @@ import { api } from '@/utils/client/api'
  *  - https://auto-animate.formkit.com
  */
 
-export const TodoList = () => {
+export const TodoList = ({ status }: { status: string }) => {
+  const apiContext = api.useContext()
+
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */)
+
   const { data: todos = [] } = api.todo.getAll.useQuery({
-    statuses: ['completed', 'pending'],
+    statuses: status === "All" ? ["completed", "pending"] : [status === "Completed" ? "completed" : "pending"]
   })
 
-  return (
-    <ul className="grid grid-cols-1 gap-y-3">
-      {todos.map((todo) => (
-        <li key={todo.id}>
-          <div className="flex items-center rounded-12 border border-gray-200 px-4 py-3 shadow-sm">
-            <Checkbox.Root
-              id={String(todo.id)}
-              className="flex h-6 w-6 items-center justify-center rounded-6 border border-gray-300 focus:border-gray-700 focus:outline-none data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
-            >
-              <Checkbox.Indicator>
-                <CheckIcon className="h-4 w-4 text-white" />
-              </Checkbox.Indicator>
-            </Checkbox.Root>
+  const { mutate: updateTodoStatus, isLoading: isUpdateStatus } =
+    api.todoStatus.update.useMutation({
+      onSuccess: () => {
+        apiContext.todo.getAll.refetch()
+      },
+      onError: (error) => {
+        console.error("Cập nhật todo thất bại:", error);
+      }
+    });
 
-            <label className="block pl-3 font-medium" htmlFor={String(todo.id)}>
-              {todo.body}
-            </label>
+  const { mutate: deleteTodo, isLoading: isDeleteTodo } =
+    api.todo.delete.useMutation({
+      onSuccess: () => {
+        apiContext.todo.getAll.refetch()
+      },
+      onError: (error) => {
+        console.error("Xóa todo thất bại:", error);
+      }
+    });
+
+  return (
+    <ul ref={parent} className="grid grid-cols-1 gap-y-3">
+      {todos.map((todo) => {
+        const isCompleted = todo.status === "completed"
+        return <li key={todo.id}>
+          <div className="flex justify-between items-center rounded-12 border border-gray-200 px-4 py-3 shadow-sm">
+            <div className='flex'>
+              <Checkbox.Root
+                disabled={isUpdateStatus}
+                checked={isCompleted}
+                onClick={() => { updateTodoStatus({ status: isCompleted ? 'pending' : "completed", todoId: todo.id }) }}
+                id={String(todo.id)}
+                className="flex h-6 w-6 items-center justify-center rounded-6 border border-gray-300 focus:border-gray-700 focus:outline-none data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
+              >
+                <Checkbox.Indicator>
+                  <CheckIcon className="h-4 w-4 text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+
+              <label className={`block pl-3 font-medium ${isCompleted ? 'line-through' : ""}`} htmlFor={String(todo.id)}>
+                {todo.body}
+              </label>
+            </div>
+            <button
+              className='w-6 cursor-pointer'
+              aria-label="Delete"
+              onClick={() => deleteTodo({ id: todo.id })}
+              disabled={isDeleteTodo}
+            >
+              <XMarkIcon />
+            </button>
           </div>
         </li>
-      ))}
+      })}
     </ul>
   )
 }

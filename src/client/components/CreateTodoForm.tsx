@@ -32,8 +32,18 @@ export const CreateTodoForm = () => {
     api.todo.create.useMutation({
       onSuccess: () => {
         apiContext.todo.getAll.refetch()
+        setTodoBody('')
       },
     })
+
+  const handleKeyDown = (event: { key: string; preventDefault: () => void }) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      createTodo({
+        body: todoBody,
+      })
+    }
+  };
 
   return (
     <form className="group flex items-center justify-between rounded-12 border border-gray-200 py-2 pr-4 focus-within:border-gray-400">
@@ -46,6 +56,7 @@ export const CreateTodoForm = () => {
         type="text"
         placeholder="Add todo"
         value={todoBody}
+        onKeyDown={handleKeyDown}
         onChange={(e) => {
           setTodoBody(e.target.value)
         }}
@@ -53,13 +64,13 @@ export const CreateTodoForm = () => {
       />
 
       <button
+        className='text-white px-5 py-2 rounded-full bg-gray-700'
         type="button"
         disabled={isCreatingTodo}
         onClick={() => {
           createTodo({
             body: todoBody,
           })
-          setTodoBody('')
         }}
       >
         Add

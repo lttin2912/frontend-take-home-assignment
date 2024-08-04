@@ -1,5 +1,7 @@
 import { CreateTodoForm } from '@/client/components/CreateTodoForm'
 import { TodoList } from '@/client/components/TodoList'
+import * as Tabs from '@radix-ui/react-tabs'
+import { useState } from 'react'
 
 /**
  * QUESTION 6:
@@ -15,18 +17,35 @@ import { TodoList } from '@/client/components/TodoList'
  * Documentation references:
  *  - https://www.radix-ui.com/docs/primitives/components/tabs
  */
-
+const tabList: string[] = ["All", "Pending", "Completed"]
 const Index = () => {
+  const [activeTab, setActiveTab] = useState("All")
   return (
     <main className="mx-auto w-[480px] pt-12">
       <div className="rounded-12 bg-white p-8 shadow-sm">
         <h1 className="text-center text-4xl font-extrabold text-gray-900">
           Todo App
         </h1>
-
-        <div className="pt-10">
-          <TodoList />
-        </div>
+        <Tabs.Root className="TabsRoot pt-10" defaultValue="All" onValueChange={e => setActiveTab(e)} >
+          <Tabs.List className="TabsList" aria-label="Manage your account">
+            {
+              tabList.map(e =>
+                <Tabs.Trigger className={`TabsTrigger border px-6 py-3 mr-2 rounded-full font-bold ${activeTab === e ? `bg-gray-700 text-white` : ""}`} value={e} key={e}>
+                  {e}
+                </Tabs.Trigger>
+              )
+            }
+          </Tabs.List>
+          {
+            tabList.map(e =>
+              <Tabs.Content className="TabsContent" value={e} key={e}>
+                <div className="pt-10">
+                  <TodoList status={e} />
+                </div>
+              </Tabs.Content>
+            )
+          }
+        </Tabs.Root>
 
         <div className="pt-10">
           <CreateTodoForm />
